@@ -233,7 +233,8 @@ endif
 	$(if $(CONFIG_CLEAN_IPKG),, \
 		mkdir -p $(1)/etc/opkg; \
 		$(call FeedSourcesAppend,$(1)/etc/opkg/distfeeds.conf); \
-		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf)
+		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf; \
+		$(SED) '/nss/d' $(1)/etc/opkg/distfeeds.conf)
 	$(if $(CONFIG_IPK_FILES_CHECKSUMS),, \
 		rm -f $(1)/sbin/pkg_check)
 
