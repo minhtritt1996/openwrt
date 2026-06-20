@@ -1,108 +1,118 @@
-![OpenWrt logo](include/logo.png)
+# 🚀 Firmware OpenWrt tăng tốc phần cứng Dual-NSS cho Meraki MR52
 
-OpenWrt Project is a Linux operating system targeting embedded devices. Instead
-of trying to create a single, static firmware, OpenWrt provides a fully
-writable filesystem with package management. This frees you from the
-application selection and configuration provided by the vendor and allows you
-to customize the device through the use of packages to suit any application.
-For developers, OpenWrt is the framework to build an application without having
-to build a complete firmware around it; for users this means the ability for
-full customization, to use the device in ways never envisioned.
+Kho mã nguồn này chứa một phiên bản OpenWrt được tùy biến và tối ưu hóa chuyên sâu dành riêng cho Cisco Meraki MR52 (IPQ8068).
 
-Sunshine!
+Điểm nổi bật nhất của firmware này là bản vá Dual-NSS Hardware Acceleration, cho phép kích hoạt và khai thác toàn bộ sức mạnh của hai nhân Qualcomm Network Subsystem (NSS). Các tác vụ xử lý mạng sẽ được chuyển từ CPU chính sang bộ xử lý NSS chuyên dụng, giúp thiết bị có thể định tuyến lưu lượng Gigabit với mức sử dụng CPU dưới 5%.
 
-## Download
+## ✨ Tính năng nổi bật
 
-Built firmware images are available for many architectures and come with a
-package selection to be used as WiFi home router. To quickly find a factory
-image usable to migrate from a vendor stock firmware to OpenWrt, try the
-*Firmware Selector*.
+**1. Tích hợp Dual NSS-GMAC (`qca-nss-gmac`)**
+- Cả hai cổng mạng `eth0` (PoE) và `eth1` (Non-PoE) đều được ánh xạ trực tiếp tới trình điều khiển NSS.
+- Loại bỏ nút thắt hiệu năng do driver Linux mặc định `stmmac`.
+- Khóa các chân PHY Reset (GPIO 6 và GPIO 7) bằng cơ chế `gpio-hog`, tránh việc kernel Linux vô tình reset PHY trong quá trình đàm phán SGMII.
 
-* [OpenWrt Firmware Selector](https://firmware-selector.openwrt.org/)
+**2. Tăng tốc phần cứng ECM (`qca-nss-ecm`)**
+- Offload hoàn toàn định tuyến IPv4 và IPv6 sang NSS.
+- Hỗ trợ xử lý PPPoE bằng phần cứng.
+- Tăng tốc SQM (Smart Queue Management) thông qua `sqm-scripts-nss`.
+- Giảm đáng kể tải CPU khi xử lý lưu lượng mạng tốc độ cao.
 
-If your device is supported, please follow the **Info** link to see install
-instructions or consult the support resources listed below.
+**3. Bộ tăng tốc mã hóa phần cứng (`qca-nss-crypto`)**
+- Kích hoạt bộ xử lý mã hóa tích hợp trên nền tảng Qualcomm IPQ806x.
+- Tăng tốc IPsec bằng phần cứng (AES/SHA).
+- Hỗ trợ tăng tốc OpenVPN thông qua Cryptodev (`/dev/crypto`).
 
-## 
+**4. Tối ưu hóa nền tảng**
+- Tinh chỉnh riêng cho Cisco Meraki MR52.
+- Cải thiện độ ổn định của giao tiếp SGMII.
+- Tích hợp firmware NSS được tối ưu.
+- Giảm độ trễ và mức sử dụng CPU trong các tác vụ mạng nặng.
 
-An advanced user may require additional or specific package. (Toolchain, SDK, ...) For everything else than simple firmware download, try the wiki download page:
+## 🛠️ Hướng dẫn biên dịch
 
-* [OpenWrt Wiki Download](https://openwrt.org/downloads)
-
-## Development
-
-To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case
-sensitive filesystem required). Cygwin is unsupported because of the lack of a
-case sensitive file system.
-
-### Requirements
-
-You need the following tools to compile OpenWrt, the package names vary between
-distributions. A complete list with distribution specific packages is found in
-the [Build System Setup](https://openwrt.org/docs/guide-developer/build-system/install-buildsystem)
-documentation.
-
-```
-binutils bzip2 diff find flex gawk gcc-6+ getopt grep install libc-dev libz-dev
-make4.1+ perl python3.6+ rsync subversion unzip which
+**1. Cài đặt các gói phụ thuộc**
+```bash
+sudo apt update
+sudo apt install -y build-essential clang flex bison g++ awk gcc-multilib g++-multilib \
+gettext git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev \
+file wget curl python3-setuptools python3-pip
 ```
 
-### Quickstart
+**2. Tải mã nguồn**
+```bash
+git clone -b openwrt-23.05-nss-qsdk11 https://github.com/minhtritt1996/openwrt.git mr52-nss
+cd mr52-nss
+```
 
-1. Run `./scripts/feeds update -a` to obtain all the latest package definitions
-   defined in feeds.conf / feeds.conf.default
+**3. Cập nhật Feeds**
+```bash
+./scripts/feeds update -a
+./scripts/feeds install -a
+```
 
-2. Run `./scripts/feeds install -a` to install symlinks for all obtained
-   packages into package/feeds/
+**4. Cấu hình OpenWrt**
+```bash
+make menuconfig
+```
+Lựa chọn:
+- Target System: **Qualcomm Atheros IPQ806X**
+- Subtarget: **Generic**
+- Target Profile: **Cisco Meraki MR52**
 
-3. Run `make menuconfig` to select your preferred configuration for the
-   toolchain, target system & firmware packages.
+**5. Bắt đầu biên dịch**
+```bash
+make V=s -j1
+```
+Hoặc sử dụng toàn bộ luồng CPU:
+```bash
+make -j$(nproc)
+```
 
-4. Run `make` to build your firmware. This will download all sources, build the
-   cross-compile toolchain and then cross-compile the GNU/Linux kernel & all chosen
-   applications for your target system.
+**6. Firmware đầu ra**
+Sau khi biên dịch thành công, firmware sẽ nằm tại:
+```text
+bin/targets/ipq806x/generic/openwrt-ipq806x-generic-meraki_mr52-squashfs-sysupgrade.bin
+```
 
-### Related Repositories
+## 📊 Kiểm tra và chẩn đoán
 
-The main repository uses multiple sub-repositories to manage packages of
-different categories. All packages are installed via the OpenWrt package
-manager called `opkg`. If you're looking to develop the web interface or port
-packages to OpenWrt, please find the fitting repository below.
+**Theo dõi tải của NSS**
+```bash
+while true; do
+    clear
+    cat /sys/kernel/debug/qca-nss-drv/stats/cpu_load_ubi
+    sleep 1
+done
+```
 
-* [LuCI Web Interface](https://github.com/openwrt/luci): Modern and modular
-  interface to control the device via a web browser.
+**Theo dõi số lượng gói tin được Offload**
+```bash
+while true; do
+    clear
+    cat /sys/kernel/debug/qca-nss-drv/stats/ipv4 | head -n 15
+    sleep 1
+done
+```
 
-* [OpenWrt Packages](https://github.com/openwrt/packages): Community repository
-  of ported packages.
+**Theo dõi số kết nối được Offload**
+```bash
+while true; do
+    clear
+    cat /sys/kernel/debug/ecm/ecm_db/connection_count
+    sleep 1
+done
+```
 
-* [OpenWrt Routing](https://github.com/openwrt/routing): Packages specifically
-  focused on (mesh) routing.
+## 📈 Hiệu năng kỳ vọng
 
-* [OpenWrt Video](https://github.com/openwrt/video): Packages specifically
-  focused on display servers and clients (Xorg and Wayland).
+| Tính năng | OpenWrt tiêu chuẩn | Bản Dual-NSS |
+| --- | --- | --- |
+| **Định tuyến IPv4** | CPU xử lý | NSS xử lý |
+| **Định tuyến IPv6** | CPU xử lý | NSS xử lý |
+| **PPPoE** | CPU xử lý | NSS xử lý |
+| **SQM QoS** | Tốn nhiều CPU | Tăng tốc bởi NSS |
+| **VPN IPsec** | Một phần bằng phần mềm | Tăng tốc phần cứng |
+| **Thông lượng Gigabit** | CPU tải cao | CPU dưới 5% |
 
-## Support Information
-
-For a list of supported devices see the [OpenWrt Hardware Database](https://openwrt.org/supported_devices)
-
-### Documentation
-
-* [Quick Start Guide](https://openwrt.org/docs/guide-quick-start/start)
-* [User Guide](https://openwrt.org/docs/guide-user/start)
-* [Developer Documentation](https://openwrt.org/docs/guide-developer/start)
-* [Technical Reference](https://openwrt.org/docs/techref/start)
-
-### Support Community
-
-* [Forum](https://forum.openwrt.org): For usage, projects, discussions and hardware advise.
-* [Support Chat](https://webchat.oftc.net/#openwrt): Channel `#openwrt` on **oftc.net**.
-
-### Developer Community
-
-* [Bug Reports](https://bugs.openwrt.org): Report bugs in OpenWrt
-* [Dev Mailing List](https://lists.openwrt.org/mailman/listinfo/openwrt-devel): Send patches
-* [Dev Chat](https://webchat.oftc.net/#openwrt-devel): Channel `#openwrt-devel` on **oftc.net**.
-
-## License
-
-OpenWrt is licensed under GPL-2.0
+---
+*Phiên bản OpenWrt 23.05 NSS QSDK11 được tối ưu dành riêng cho Cisco Meraki MR52 với hỗ trợ đầy đủ Dual-NSS Hardware Acceleration.*
