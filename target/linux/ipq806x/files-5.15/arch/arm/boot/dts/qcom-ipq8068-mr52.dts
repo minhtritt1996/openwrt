@@ -73,12 +73,23 @@
 
 &gmac2 {
 	status = "okay";
-
-	qcom,id = <2>;
-	mdiobus = <&mdio0>;
+	compatible = "qcom,nss-gmac";
+	reg = <0x37400000 0x200000>;
+	interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL_HIGH>;
 
 	phy-mode = "sgmii";
-	phy-handle = <&phy0>;
+	qcom,id = <2>;
+	qcom,pcs-chanid = <1>;
+	qcom,phy-mdio-addr = <0>;
+	qcom,poll-required = <1>;
+	qcom,rgmii-delay = <0>;
+	qcom,phy_mii_type = <1>;
+	qcom,emulation = <0>;
+	qcom,forced-speed = <1000>;
+	qcom,forced-duplex = <1>;
+	qcom,socver = <0>;
+	qcom,irq = <258>;
+	mdiobus = <&mdio_gpio0>;
 
 	nvmem-cells = <&mac_address>;
 	nvmem-cell-names = "mac-address";
@@ -86,12 +97,23 @@
 
 &gmac3 {
 	status = "okay";
-
-	qcom,id = <3>;
-	mdiobus = <&mdio_gpio0>;
+	compatible = "qcom,nss-gmac";
+	reg = <0x37600000 0x200000>;
+	interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH>;
 
 	phy-mode = "sgmii";
-	phy-handle = <&phy4>;
+	qcom,id = <3>;
+	qcom,pcs-chanid = <2>;
+	qcom,phy-mdio-addr = <4>;
+	qcom,poll-required = <1>;
+	qcom,rgmii-delay = <0>;
+	qcom,phy_mii_type = <1>;
+	qcom,emulation = <0>;
+	qcom,forced-speed = <1000>;
+	qcom,forced-duplex = <1>;
+	qcom,socver = <0>;
+	qcom,irq = <261>;
+	mdiobus = <&mdio_gpio0>;
 
 	nvmem-cells = <&mac_address>;
 	nvmem-cell-names = "mac-address";
@@ -181,6 +203,13 @@
 			input;
 		};
 	};
+
+	phy_reset_hog {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_HIGH>, <7 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "phy-reset";
+	};
 };
 
 &soc {
@@ -199,14 +228,10 @@
 
 		phy0: ethernet-phy0 {
 			reg = <0>;
-			reset-gpios = <&qcom_pinmux 7 GPIO_ACTIVE_LOW>;
-			reset-assert-us = <24000>;
 		};
 
 		phy4: ethernet-phy4 {
 			reg = <4>;
-			reset-gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
-			reset-assert-us = <24000>;
 		};
 	};
 };

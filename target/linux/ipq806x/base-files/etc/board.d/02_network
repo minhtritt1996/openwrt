@@ -52,7 +52,7 @@ meraki,mr42)
 	ucidef_set_interface_lan "eth0"
 	;;
 meraki,mr52)
-	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_set_interface_lan "eth0 eth1"
 	;;
 nec,wg2600hp3)
 	ucidef_add_switch "switch0" \
